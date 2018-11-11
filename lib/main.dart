@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sample_flutter/data.dart';
+import 'package:sample_flutter/bloc/photo_bloc.dart';
 
 void main() => runApp(new MyApp());
 
@@ -34,43 +34,49 @@ class ImagesGridWidget extends StatefulWidget {
 }
 
 class ImagesState extends State<ImagesGridWidget> {
-  final _dataSource = ImageDataSource();
-  var _list = List<String>();
+  final _bloc = PhotoBloc();
 
   @override
   void initState() {
-    _dataSource.getPhoto().then((value) {
-      setState(() {
-        _list = value;
-      });
-    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      children: _list.map((source) {
-        final name = "image${_list.indexOf(source)}";
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return DetailWidget(name, source);
-            }));
-          },
-          child: Card(
-            child: Hero(
-              tag: name,
-              child: Image.network(
-                source,
-                fit: BoxFit.fitHeight,
+    return StreamBuilder<List<String>>(
+      stream: _bloc.photos,
+      initialData: List<String>(),
+      builder: (context, snapshot) {
+        return GridView.count(
+          crossAxisCount: 2,
+          children: snapshot.data.map((source) {
+            final name = "image${snapshot.data.indexOf(source)}";
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return DetailWidget(name, source);
+                }));
+              },
+              child: Hero(
+                tag: name,
+                child: Card(
+                  child: Image.network(
+                    source,
+                    fit: BoxFit.fitHeight,
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
+  }
+
+  @override
+  void dispose() {
+    _bloc.dispose();
+    super.dispose();
   }
 }
 
